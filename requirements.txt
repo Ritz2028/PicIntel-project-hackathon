@@ -1,0 +1,10 @@
+Flask==3.0.0
+Flask-WTF==1.1.1
+Werkzeug==3.0.1
+Pillow==10.0.1
+opencv-python-headless==4.8.1.78
+numpy==1.25.2
+pytesseract==0.3.10
+WTForms==3.0.1
+requests==2.31.0
+google-search-results==2.4.2
