@@ -10,6 +10,13 @@ import cv2
 import numpy as np
 import pytesseract
 from PIL import Image, ExifTags
+
+# Windows uses the installed Tesseract-OCR executable.
+# In Linux/Docker, tesseract is installed on PATH automatically.
+if os.name == "nt":
+    pytesseract.pytesseract.tesseract_cmd = (
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    )
 from flask import (
     Flask,
     render_template,
