@@ -1,4 +1,5 @@
 import os
+import io
 import json
 import math
 import random
@@ -9,7 +10,7 @@ from datetime import datetime, timedelta
 import cv2
 import numpy as np
 import pytesseract
-from PIL import Image, ExifTags
+from PIL import Image, ImageChops, ExifTags
 
 # Windows uses the installed Tesseract-OCR executable.
 # In Linux/Docker, tesseract is installed on PATH automatically.
@@ -277,6 +278,36 @@ def extract_gps_data_fixed(gps_info):
         pass
 
     return gps_data
+
+
+def ela_score(path, quality=90):
+    """
+    Error Level Analysis (ELA).
+
+    Re-save the image as JPEG at a known quality and compare it
+    with the original. The threshold is hand-tuned for demo purposes.
+    """
+
+    original = Image.open(path).convert("RGB")
+
+    buffer = io.BytesIO()
+    original.save(buffer, "JPEG", quality=quality)
+    buffer.seek(0)
+
+    resaved = Image.open(buffer).convert("RGB")
+
+    diff = np.array(
+        ImageChops.difference(original, resaved)
+    ).astype(float)
+
+    return {
+        "mean_error": round(float(diff.mean()), 2),
+        "max_error": float(diff.max()),
+        "std_error": round(float(diff.std()), 2),
+        "suspicious": bool(diff.std() > 8),
+        "quality": quality,
+        "threshold": 8
+    }
 
 
 def extract_metadata(file_path):
@@ -1003,6 +1034,7 @@ def upload_file():
                 ), 400
 
             metadata = extract_metadata(file_path)
+            ela_analysis = ela_score(file_path)
 
             index_local_image(
                 file_path,
@@ -1016,6 +1048,7 @@ def upload_file():
 
             analysis_data = {
                 "metadata": metadata,
+                "ela_analysis": ela_analysis,
                 "reverse_search": reverse_search_results,
                 "filename": filename,
                 "analysis_complete": True,
